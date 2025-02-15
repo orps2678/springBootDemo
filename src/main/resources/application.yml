@@ -1,0 +1,61 @@
+server:
+  port: 8088  # 設定 Spring Boot 伺服器的埠號（HTTP 監聽的端口）
+  tomcat:
+    threads:
+      max: 200  # 設定 Tomcat 最大執行緒數，影響同時處理的請求數量
+    connection-timeout: 5000  # 連線逾時時間（毫秒），超時後請求將被終止
+
+spring:
+  datasource:
+    url: jdbc:oracle:thin:@localhost:1521/XEPDB1  # 連接到 Oracle 資料庫的 JDBC URL（使用 XEPDB1 作為 PDB）
+    username: DEMO  # 資料庫使用者名稱
+    password: DEMO123456  # 資料庫使用者密碼
+    driver-class-name: oracle.jdbc.OracleDriver  # 指定使用 Oracle JDBC 驅動程式
+    type: com.zaxxer.hikari.HikariDataSource  # 指定數據庫連線池類型（HikariCP，高效能的連線池）
+
+    hikari:  # HikariCP 連線池的相關設定
+      pool-name: HikariCP-Oracle  # 連線池名稱
+      maximum-pool-size: 10  # 最大連線數，HikariCP 會根據應用需求自動擴展
+      minimum-idle: 2  # 最小閒置連線數，保持 2 個閒置連線以加速處理請求
+      idle-timeout: 30000  # 連線閒置超過 30 秒則關閉
+      connection-timeout: 30000  # 連線等待時間（30 秒），超過則拋出例外
+      validation-timeout: 5000  # 連線驗證超時時間（5 秒），超過則視為無效連線
+      max-lifetime: 1800000  # 連線最大生命週期（30 分鐘），超過則重新建立
+      auto-commit: true  # 設定是否自動提交（建議開發環境設為 `true`，生產環境視需求設定）
+      connection-test-query: SELECT 1 FROM DUAL  # 定期驗證資料庫連線是否可用（Oracle 特定測試查詢）
+
+  jpa:
+    database-platform: org.hibernate.dialect.OracleDialect  # 指定 Hibernate 的方言（Dialect）為 Oracle
+    show-sql: true  # 是否在日誌中顯示 SQL 查詢（開發環境建議開啟）
+    hibernate:
+      ddl-auto: update  # 自動更新資料表結構（可選值: `none`, `validate`, `update`, `create`, `create-drop`）
+
+    properties:
+      hibernate:
+        format_sql: true  # 讓 SQL 更易讀（美化輸出）
+        show_sql: true  # 顯示 SQL 查詢（與 `spring.jpa.show-sql` 類似）
+        use_sql_comments: true  # 在 SQL 查詢中添加 Hibernate 註解（方便除錯）
+        jdbc:
+          batch_size: 50  # 設定批次處理大小，提升大批量寫入效能
+          fetch_size: 50  # 設定查詢批次大小，減少記憶體佔用，適合大量數據查詢
+        generate_statistics: true  # 產生 Hibernate 效能統計數據（可用於監測查詢效能）
+        order_inserts: true  # 讓 Hibernate 盡可能優化 INSERT 順序，提升效能
+        order_updates: true  # 讓 Hibernate 盡可能優化 UPDATE 順序，提升效能
+
+    open-in-view: false  # 是否啟用 Open Session in View 模式（關閉可提升效能，避免延遲加載問題）
+
+logging:
+  level:
+    org.hibernate.SQL: DEBUG  # Hibernate SQL 執行日誌級別
+    org.hibernate.type.descriptor.sql.BasicBinder: TRACE  # 顯示 SQL 查詢的參數值
+    com.zaxxer.hikari.HikariConfig: DEBUG  # 顯示 HikariCP 連線池的詳細設定資訊
+    com.zaxxer.hikari: TRACE  # 追蹤 HikariCP 連線池行為（開發環境可開啟）
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics  # 允許透過 `/actuator/health` `/actuator/info` `/actuator/metrics` 取得監控資訊
+  endpoint:
+    health:
+      show-details: always  # 在 `/actuator/health` API 回應中顯示詳細的健康狀況資訊
